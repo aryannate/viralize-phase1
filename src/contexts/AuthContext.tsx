@@ -6,6 +6,12 @@ type User = {
   email: string;
   name: string;
   avatar?: string;
+  audienceType?: string;
+  audienceAge?: string;
+  audienceSize?: string;
+  niche?: string;
+  interests?: string;
+  brandCollaborations?: string;
 };
 
 type AuthContextType = {
