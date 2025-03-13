@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
-import { Upload, Trash2, RefreshCw, Play } from "lucide-react";
+import { Upload, Trash2, RefreshCw, Play, VideoIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Link } from "react-router-dom";
 
 const AvatarSetup = () => {
   const { toast } = useToast();
@@ -63,18 +64,26 @@ const AvatarSetup = () => {
             Upload videos to create your custom AI avatar
           </p>
         </div>
-        <Button variant="outline" onClick={() => document.getElementById('video-upload')?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          Add Videos
-          <input
-            id="video-upload"
-            type="file"
-            accept="video/*"
-            className="hidden"
-            multiple
-            onChange={handleFileChange}
-          />
-        </Button>
+        <div className="flex space-x-3">
+          <Button variant="default" asChild>
+            <Link to="/avatar-training">
+              <VideoIcon className="h-4 w-4 mr-2" />
+              Advanced Training
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={() => document.getElementById('video-upload')?.click()}>
+            <Upload className="h-4 w-4 mr-2" />
+            Add Videos
+            <input
+              id="video-upload"
+              type="file"
+              accept="video/*"
+              className="hidden"
+              multiple
+              onChange={handleFileChange}
+            />
+          </Button>
+        </div>
       </div>
       
       {files.length > 0 && (
