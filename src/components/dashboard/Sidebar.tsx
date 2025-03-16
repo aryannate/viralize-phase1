@@ -1,73 +1,113 @@
 
-import { Home, Video, Mic, Share2, Calendar, BarChart, Settings, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Bot, Grid3X3, Video, Mic, Users, Hash, DollarSign, Handshake } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
 
-const navItems = [
-  { id: "avatar", label: "AI Avatar", icon: Video },
-  { id: "voice", label: "Voice Refinement", icon: Mic },
-  { id: "social", label: "Social Accounts", icon: Share2 },
-  { id: "posts", label: "Post Automation", icon: Calendar },
-  { id: "analytics", label: "Analytics", icon: BarChart },
-  { id: "settings", label: "Settings", icon: Settings },
-];
-
 const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const menuItems = [
+    {
+      name: "Dashboard",
+      icon: <Grid3X3 className="h-5 w-5" />,
+      value: "dashboard",
+      path: "/dashboard"
+    },
+    {
+      name: "AI Avatar",
+      icon: <Bot className="h-5 w-5" />,
+      value: "avatar",
+      path: "/avatar-training"
+    },
+    {
+      name: "Voice",
+      icon: <Mic className="h-5 w-5" />,
+      value: "voice",
+      path: "/dashboard"
+    },
+    {
+      name: "Social",
+      icon: <Users className="h-5 w-5" />,
+      value: "social",
+      path: "/dashboard"
+    },
+    {
+      name: "Content Tools",
+      icon: <Hash className="h-5 w-5" />,
+      value: "tools",
+      path: "/content-tools"
+    },
+    {
+      name: "Posts",
+      icon: <Video className="h-5 w-5" />,
+      value: "posts",
+      path: "/dashboard"
+    },
+    {
+      name: "Monetization",
+      icon: <DollarSign className="h-5 w-5" />,
+      value: "monetize",
+      path: "/dashboard"
+    },
+    {
+      name: "Collaborations",
+      icon: <Handshake className="h-5 w-5" />,
+      value: "collaborations",
+      path: "/collaborations"
+    }
+  ];
+  
+  const handleTabChange = (tabValue: string, path: string) => {
+    setActiveTab(tabValue);
+    navigate(path);
+  };
+
   return (
-    <div className="w-64 hidden md:flex flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
-          InfluencerAI
-        </h1>
+    <div className="h-screen w-64 border-r bg-background flex flex-col">
+      <div className="p-6">
+        <h2 className="text-2xl font-bold">Viralize</h2>
+        <p className="text-sm text-muted-foreground">AI-Powered Social Automation</p>
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          asChild
-        >
-          <a href="/" className="flex items-center">
-            <Home className="mr-2 h-4 w-4" />
-            Home
-          </a>
-        </Button>
-        
-        <div className="pt-4 pb-2">
-          <p className="px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Platform
-          </p>
-        </div>
-        
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Button
-              key={item.id}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start",
-                activeTab === item.id && "bg-gray-100 dark:bg-gray-700"
-              )}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {item.label}
-            </Button>
-          );
-        })}
+      <nav className="flex-1 px-4 space-y-2">
+        {menuItems.map((item) => (
+          <button
+            key={item.value}
+            onClick={() => handleTabChange(item.value, item.path)}
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "w-full justify-start",
+              activeTab === item.value ? "bg-muted" : "hover:bg-transparent hover:underline"
+            )}
+          >
+            {item.icon}
+            <span className="ml-2">{item.name}</span>
+          </button>
+        ))}
       </nav>
       
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
+      <div className="p-4 border-t">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="font-medium text-primary">
+              {user?.name?.charAt(0) || "U"}
+            </span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
+            <p className="text-xs text-muted-foreground">
+              {user?.email || "user@example.com"}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

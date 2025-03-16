@@ -10,6 +10,8 @@ import AvatarTraining from "./pages/AvatarTraining";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import ContentTools from "./pages/ContentTools";
+import Collaborations from "./pages/Collaborations";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/content-tools" 
+              element={
+                <ProtectedRoute>
+                  <ContentTools />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/collaborations" 
+              element={
+                <ProtectedRoute>
+                  <Collaborations />
                 </ProtectedRoute>
               } 
             />

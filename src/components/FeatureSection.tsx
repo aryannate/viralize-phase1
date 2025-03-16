@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, Video, Mic, Instagram, Linkedin, Calendar, Zap } from "lucide-react";
+import { Bot, Video, Mic, Instagram, Linkedin, Calendar, Zap, Hash, MessageSquare, DollarSign, Handshake, RefreshCw } from "lucide-react";
 
 const features = [
   {
@@ -24,9 +24,29 @@ const features = [
     icon: <Calendar className="h-10 w-10 text-purple-500" />
   },
   {
-    title: "Smart Suggestions",
-    description: "Get AI-powered content ideas based on your audience engagement and trends.",
-    icon: <Bot className="h-10 w-10 text-purple-500" />
+    title: "Hashtag & Caption Generator",
+    description: "Create engaging captions and find trending hashtags with AI to boost your content's reach.",
+    icon: <Hash className="h-10 w-10 text-purple-500" />
+  },
+  {
+    title: "Content Repurposing",
+    description: "Transform long-form content into multiple short posts optimized for different platforms.",
+    icon: <RefreshCw className="h-10 w-10 text-purple-500" />
+  },
+  {
+    title: "AI Comment Responder",
+    description: "Automate audience engagement with personalized AI replies to comments and DMs.",
+    icon: <MessageSquare className="h-10 w-10 text-purple-500" />
+  },
+  {
+    title: "Monetization Insights",
+    description: "Discover revenue opportunities and brand partnerships based on your audience data.",
+    icon: <DollarSign className="h-10 w-10 text-purple-500" />
+  },
+  {
+    title: "Collaboration Hub",
+    description: "Connect directly with brands for sponsorships and partnership opportunities.",
+    icon: <Handshake className="h-10 w-10 text-purple-500" />
   },
   {
     title: "Performance Analytics",

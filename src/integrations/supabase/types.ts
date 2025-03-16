@@ -9,7 +9,200 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ai_responses: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          response_type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          response_type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          response_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      brand_collaborations: {
+        Row: {
+          brand_description: string | null
+          brand_name: string
+          collaboration_type: string | null
+          compensation: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          requirements: string | null
+        }
+        Insert: {
+          brand_description?: string | null
+          brand_name: string
+          collaboration_type?: string | null
+          compensation?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          requirements?: string | null
+        }
+        Update: {
+          brand_description?: string | null
+          brand_name?: string
+          collaboration_type?: string | null
+          compensation?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          requirements?: string | null
+        }
+        Relationships: []
+      }
+      captions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          theme: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          theme?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          theme?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      collaboration_applications: {
+        Row: {
+          collaboration_id: string
+          created_at: string | null
+          id: string
+          message: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          collaboration_id: string
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          collaboration_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_applications_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "brand_collaborations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hashtags: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          name: string
+          trend_score: number | null
+          trending: boolean | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          trend_score?: number | null
+          trending?: boolean | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          trend_score?: number | null
+          trending?: boolean | null
+        }
+        Relationships: []
+      }
+      monetization_insights: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          estimated_value: number | null
+          id: string
+          insight_type: string
+          is_implemented: boolean | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          estimated_value?: number | null
+          id?: string
+          insight_type: string
+          is_implemented?: boolean | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          estimated_value?: number | null
+          id?: string
+          insight_type?: string
+          is_implemented?: boolean | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      test: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
