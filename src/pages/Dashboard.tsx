@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AvatarSetup from "@/components/dashboard/AvatarSetup";
 import VoiceSetup from "@/components/dashboard/VoiceSetup";
@@ -20,13 +20,6 @@ const Dashboard = () => {
         
         <main className="flex-1 p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4 mb-8">
-              <TabsTrigger value="avatar">AI Avatar</TabsTrigger>
-              <TabsTrigger value="voice">Voice Refinement</TabsTrigger>
-              <TabsTrigger value="social">Social Accounts</TabsTrigger>
-              <TabsTrigger value="posts">Post Automation</TabsTrigger>
-            </TabsList>
-            
             <TabsContent value="avatar" className="mt-0">
               <AvatarSetup />
             </TabsContent>
