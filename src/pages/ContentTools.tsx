@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Magic, Hash, RefreshCw, MessageSquare, DollarSign } from "lucide-react";
+import { Sparkles, Hash, RefreshCw, MessageSquare, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -44,7 +44,7 @@ const ContentTools = () => {
                 <Hash className="h-4 w-4" /> Hashtags
               </TabsTrigger>
               <TabsTrigger value="captions" className="flex items-center gap-2">
-                <Magic className="h-4 w-4" /> Captions
+                <Sparkles className="h-4 w-4" /> Captions
               </TabsTrigger>
               <TabsTrigger value="repurpose" className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" /> Repurpose
