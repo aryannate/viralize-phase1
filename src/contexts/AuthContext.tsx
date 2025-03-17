@@ -7,13 +7,13 @@ type User = {
   id: string;
   email: string;
   name: string;
-  avatar?: string;
-  audienceType?: string;
-  audienceAge?: string;
-  audienceSize?: string;
+  avatar_url?: string;
+  audience_type?: string;
+  audience_age?: string;
+  audience_size?: string;
   niche?: string;
   interests?: string;
-  brandCollaborations?: string;
+  brand_collaborations?: string;
 };
 
 type AuthContextType = {
@@ -22,6 +22,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  // Fetch user profile from profiles table
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
   // Check for active Supabase session on initial load
   useEffect(() => {
     const checkSession = async () => {
@@ -45,22 +63,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.session) {
         const { data: userData } = await supabase.auth.getUser();
         if (userData.user) {
-          const userProfile = {
-            id: userData.user.id,
-            email: userData.user.email || '',
-            name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || '',
-            avatar: userData.user.user_metadata?.avatar_url,
-          };
-          setUser(userProfile);
-          setIsAuthenticated(true);
-          localStorage.setItem("user", JSON.stringify(userProfile));
-        }
-      } else {
-        // Check for saved user as fallback
-        const savedUser = localStorage.getItem("user");
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-          setIsAuthenticated(true);
+          // Fetch user profile from the profiles table
+          const profileData = await fetchUserProfile(userData.user.id);
+          
+          if (profileData) {
+            setUser(profileData);
+            setIsAuthenticated(true);
+          }
         }
       }
     };
@@ -73,20 +82,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_IN' && session) {
           const { data: userData } = await supabase.auth.getUser();
           if (userData.user) {
-            const userProfile = {
-              id: userData.user.id,
-              email: userData.user.email || '',
-              name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || '',
-              avatar: userData.user.user_metadata?.avatar_url,
-            };
-            setUser(userProfile);
-            setIsAuthenticated(true);
-            localStorage.setItem("user", JSON.stringify(userProfile));
+            // Fetch profile data after sign in
+            const profileData = await fetchUserProfile(userData.user.id);
+            
+            if (profileData) {
+              setUser(profileData);
+              setIsAuthenticated(true);
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setIsAuthenticated(false);
-          localStorage.removeItem("user");
         }
       }
     );
@@ -107,21 +113,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       if (data.user) {
-        const userProfile = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || '',
-          avatar: data.user.user_metadata?.avatar_url,
-        };
+        // Fetch profile after login
+        const profileData = await fetchUserProfile(data.user.id);
         
-        setUser(userProfile);
-        setIsAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(userProfile));
-        
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
+        if (profileData) {
+          setUser(profileData);
+          setIsAuthenticated(true);
+          
+          toast({
+            title: "Login successful",
+            description: "Welcome back!",
+          });
+        }
       }
     } catch (error: any) {
       toast({
@@ -149,23 +152,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       
       if (data.user) {
-        const userProfile = {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: name || data.user.email?.split('@')[0] || '',
-          avatar: data.user.user_metadata?.avatar_url,
-        };
-        
         // For development mode without email verification
         if (data.session) {
-          setUser(userProfile);
-          setIsAuthenticated(true);
-          localStorage.setItem("user", JSON.stringify(userProfile));
+          // Fetch the newly created profile
+          const profileData = await fetchUserProfile(data.user.id);
           
-          toast({
-            title: "Account created successfully",
-            description: "Welcome to the platform!",
-          });
+          if (profileData) {
+            setUser(profileData);
+            setIsAuthenticated(true);
+            
+            toast({
+              title: "Account created successfully",
+              description: "Welcome to Viralize!",
+            });
+          }
         } else {
           toast({
             title: "Verification email sent",
@@ -183,12 +183,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Update user profile function
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      if (!user) throw new Error("No user logged in");
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local user state with new data
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message || "There was an error updating your profile.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   // Logout function using Supabase
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("user");
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
@@ -196,7 +224,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, signup, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      login, 
+      signup, 
+      logout,
+      updateProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );

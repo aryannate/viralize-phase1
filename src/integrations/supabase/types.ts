@@ -36,6 +36,44 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_settings: {
+        Row: {
+          created_at: string
+          customizations: Json | null
+          id: string
+          image_url: string | null
+          style: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customizations?: Json | null
+          id?: string
+          image_url?: string | null
+          style?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customizations?: Json | null
+          id?: string
+          image_url?: string | null
+          style?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avatar_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_collaborations: {
         Row: {
           brand_description: string | null
@@ -188,6 +226,148 @@ export type Database = {
         }
         Relationships: []
       }
+      post_automations: {
+        Row: {
+          content: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          media_urls: string[] | null
+          platform: string
+          schedule: Json | null
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          media_urls?: string[] | null
+          platform: string
+          schedule?: Json | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          media_urls?: string[] | null
+          platform?: string
+          schedule?: Json | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_automations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          audience_age: string | null
+          audience_size: string | null
+          audience_type: string | null
+          avatar_url: string | null
+          brand_collaborations: string | null
+          created_at: string
+          email: string | null
+          id: string
+          interests: string | null
+          name: string | null
+          niche: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_age?: string | null
+          audience_size?: string | null
+          audience_type?: string | null
+          avatar_url?: string | null
+          brand_collaborations?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          interests?: string | null
+          name?: string | null
+          niche?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_age?: string | null
+          audience_size?: string | null
+          audience_type?: string | null
+          avatar_url?: string | null
+          brand_collaborations?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          interests?: string | null
+          name?: string | null
+          niche?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_connections: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          platform: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          platform: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          platform?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_connections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test: {
         Row: {
           created_at: string
@@ -202,6 +382,50 @@ export type Database = {
           id?: number
         }
         Relationships: []
+      }
+      voice_settings: {
+        Row: {
+          created_at: string
+          id: string
+          pitch: number | null
+          sample_url: string | null
+          speed: number | null
+          updated_at: string
+          user_id: string
+          voice_id: string | null
+          voice_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pitch?: number | null
+          sample_url?: string | null
+          speed?: number | null
+          updated_at?: string
+          user_id: string
+          voice_id?: string | null
+          voice_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pitch?: number | null
+          sample_url?: string | null
+          speed?: number | null
+          updated_at?: string
+          user_id?: string
+          voice_id?: string | null
+          voice_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

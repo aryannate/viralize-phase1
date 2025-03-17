@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,18 +8,65 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Mic, Play, Square, Upload, RefreshCw, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+type VoiceSettings = {
+  id?: string;
+  pitch: number;
+  speed: number;
+  clarity: number;
+  voice_name?: string;
+  sample_url?: string;
+};
 
 const VoiceSetup = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [recording, setRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [voiceSettings, setVoiceSettings] = useState({
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
     pitch: 50,
     speed: 50,
     clarity: 75,
   });
+  
+  // Fetch user's voice settings
+  useEffect(() => {
+    const fetchVoiceSettings = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('voice_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setVoiceSettings({
+            id: data.id,
+            pitch: data.pitch || 50,
+            speed: data.speed || 50,
+            clarity: 75, // Default value if not in DB
+            voice_name: data.voice_name,
+            sample_url: data.sample_url
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching voice settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchVoiceSettings();
+  }, [user]);
   
   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -51,11 +99,20 @@ const VoiceSetup = () => {
     setAudioFiles(prev => [...prev, mockFile]);
   };
   
-  const uploadAudio = () => {
+  const uploadAudio = async () => {
     if (audioFiles.length === 0) {
       toast({
         title: "No audio samples",
         description: "Please record or upload at least one audio sample.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save voice settings.",
         variant: "destructive",
       });
       return;
@@ -69,17 +126,130 @@ const VoiceSetup = () => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          setUploading(false);
-          toast({
-            title: "Voice model created",
-            description: "Your AI voice has been successfully refined.",
-          });
           return 100;
         }
         return prev + 5;
       });
     }, 300);
+    
+    try {
+      // In a real app, we would upload the audio files to storage here
+      // For now, we'll just simulate that and update the database
+      
+      // Wait for simulation to complete
+      await new Promise(resolve => setTimeout(resolve, 6000));
+      
+      // Generate a sample URL (in a real app this would be the processed voice model URL)
+      const sampleUrl = `https://example.com/voice-sample-${Date.now()}.mp3`;
+      
+      // Create or update voice settings in the database
+      if (voiceSettings.id) {
+        // Update existing record
+        const { error } = await supabase
+          .from('voice_settings')
+          .update({
+            pitch: voiceSettings.pitch,
+            speed: voiceSettings.speed,
+            voice_name: `${user.name}'s Voice`,
+            sample_url: sampleUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', voiceSettings.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new record
+        const { data, error } = await supabase
+          .from('voice_settings')
+          .insert({
+            user_id: user.id,
+            pitch: voiceSettings.pitch,
+            speed: voiceSettings.speed,
+            voice_name: `${user.name}'s Voice`,
+            sample_url: sampleUrl
+          })
+          .select();
+        
+        if (error) throw error;
+        
+        if (data && data[0]) {
+          setVoiceSettings(prev => ({
+            ...prev,
+            id: data[0].id,
+            sample_url: sampleUrl,
+            voice_name: `${user.name}'s Voice`
+          }));
+        }
+      }
+      
+      toast({
+        title: "Voice model created",
+        description: "Your AI voice has been successfully refined.",
+      });
+      
+      // Clear audio files after processing
+      setAudioFiles([]);
+      
+    } catch (error) {
+      console.error("Error saving voice settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save voice settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
   };
+  
+  const saveVoiceSettings = async () => {
+    if (!user || !voiceSettings.id) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('voice_settings')
+        .update({
+          pitch: voiceSettings.pitch,
+          speed: voiceSettings.speed,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', voiceSettings.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Settings saved",
+        description: "Your voice settings have been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating voice settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save voice settings. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Voice Refinement</h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              Loading your voice settings...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-8">
@@ -127,6 +297,16 @@ const VoiceSetup = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {voiceSettings.sample_url && !audioFiles.length && (
+              <div className="text-center py-4 mb-4 bg-green-50 dark:bg-green-900/20 rounded-md">
+                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <p className="font-medium">Voice model already created</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  You can upload new samples to refine it
+                </p>
+              </div>
+            )}
+            
             {audioFiles.length > 0 ? (
               <div className="space-y-3">
                 {audioFiles.map((file, index) => (
@@ -143,13 +323,13 @@ const VoiceSetup = () => {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !voiceSettings.sample_url ? (
               <div className="text-center py-8">
                 <Mic className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No audio samples yet</p>
                 <p className="text-sm text-gray-400">Record or upload audio samples</p>
               </div>
-            )}
+            ) : null}
           </CardContent>
           <CardFooter>
             <Button 
@@ -163,7 +343,7 @@ const VoiceSetup = () => {
                   Processing...
                 </>
               ) : (
-                "Generate Voice Model"
+                `${voiceSettings.sample_url ? "Refine" : "Generate"} Voice Model`
               )}
             </Button>
           </CardFooter>
@@ -177,6 +357,19 @@ const VoiceSetup = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {voiceSettings.voice_name && (
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                <h4 className="font-medium">{voiceSettings.voice_name}</h4>
+                {voiceSettings.sample_url && (
+                  <div className="flex items-center mt-2">
+                    <Button variant="ghost" size="sm" className="h-8 text-xs">
+                      <Play className="h-3 w-3 mr-1" /> Play Sample
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label htmlFor="pitch">Pitch</Label>
@@ -222,10 +415,14 @@ const VoiceSetup = () => {
               />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button className="w-full" variant="outline">
-              <Play className="h-4 w-4 mr-2" />
-              Preview Voice
+          <CardFooter className="flex justify-between">
+            <Button 
+              className="w-full" 
+              variant={voiceSettings.sample_url ? "default" : "outline"}
+              disabled={isLoading || !voiceSettings.id}
+              onClick={saveVoiceSettings}
+            >
+              {isLoading ? "Saving..." : "Save Settings"}
             </Button>
           </CardFooter>
         </Card>

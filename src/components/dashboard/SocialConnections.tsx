@@ -1,4 +1,6 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +17,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Create a TikTok icon since it's not in lucide-react
 const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -42,10 +45,14 @@ type SocialPlatform = {
   icon: React.ElementType;
   connected: boolean;
   username?: string;
+  dbId?: string; // database record ID
 };
 
 const SocialConnections = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [platforms, setPlatforms] = useState<SocialPlatform[]>([
     { id: "instagram", name: "Instagram", icon: Instagram, connected: false },
     { id: "linkedin", name: "LinkedIn", icon: Linkedin, connected: false },
@@ -64,21 +71,82 @@ const SocialConnections = () => {
   
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | null>(null);
   
+  // Fetch user's connected social platforms
+  useEffect(() => {
+    const fetchConnections = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('social_connections')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        // Update platforms with connection status
+        if (data && data.length > 0) {
+          const updatedPlatforms = platforms.map(platform => {
+            const connection = data.find(conn => conn.platform === platform.id);
+            if (connection) {
+              return {
+                ...platform,
+                connected: true,
+                username: connection.username,
+                dbId: connection.id
+              };
+            }
+            return platform;
+          });
+          
+          setPlatforms(updatedPlatforms);
+        }
+      } catch (error) {
+        console.error("Error fetching social connections:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your social connections.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchConnections();
+  }, [user]);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const connectPlatform = () => {
-    if (!selectedPlatform) return;
+  const connectPlatform = async () => {
+    if (!selectedPlatform || !user) return;
     
-    // In a real app, this would be an API call to connect to the platform
-    // This is just a simulation
-    setTimeout(() => {
+    setIsLoading(true);
+    
+    try {
+      // Insert new connection in database
+      const { data, error } = await supabase
+        .from('social_connections')
+        .insert({
+          user_id: user.id,
+          platform: selectedPlatform.id,
+          username: formData.username,
+          // In a real app, you would securely handle tokens rather than storing passwords
+          // These would typically come from OAuth flows
+          access_token: "sample_token_" + Date.now(),
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      // Update the platforms state
       setPlatforms(prev => 
         prev.map(p => 
           p.id === selectedPlatform.id 
-            ? { ...p, connected: true, username: formData.username } 
+            ? { ...p, connected: true, username: formData.username, dbId: data[0].id } 
             : p
         )
       );
@@ -90,21 +158,69 @@ const SocialConnections = () => {
       
       setSelectedPlatform(null);
       setFormData({ username: "", password: "", apiKey: "" });
-    }, 1000);
+    } catch (error) {
+      console.error("Error connecting platform:", error);
+      toast({
+        title: "Connection Failed",
+        description: "There was an error connecting your account. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const disconnectPlatform = (id: string) => {
-    setPlatforms(prev => 
-      prev.map(p => 
-        p.id === id ? { ...p, connected: false, username: undefined } : p
-      )
-    );
+  const disconnectPlatform = async (platform: SocialPlatform) => {
+    if (!user || !platform.dbId) return;
     
-    toast({
-      title: "Disconnected",
-      description: `Your ${platforms.find(p => p.id === id)?.name} account has been disconnected.`,
-    });
+    setIsLoading(true);
+    
+    try {
+      // Delete the connection from the database
+      const { error } = await supabase
+        .from('social_connections')
+        .delete()
+        .eq('id', platform.dbId);
+      
+      if (error) throw error;
+      
+      // Update the platforms state
+      setPlatforms(prev => 
+        prev.map(p => 
+          p.id === platform.id ? { ...p, connected: false, username: undefined, dbId: undefined } : p
+        )
+      );
+      
+      toast({
+        title: "Disconnected",
+        description: `Your ${platform.name} account has been disconnected.`,
+      });
+    } catch (error) {
+      console.error("Error disconnecting platform:", error);
+      toast({
+        title: "Disconnection Failed",
+        description: "There was an error disconnecting your account. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
+  if (isLoading && !platforms.some(p => p.connected)) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Social Media Connections</h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              Loading your connections...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-8">
@@ -148,7 +264,8 @@ const SocialConnections = () => {
                     <Button 
                       variant="outline" 
                       className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={() => disconnectPlatform(platform.id)}
+                      onClick={() => disconnectPlatform(platform)}
+                      disabled={isLoading}
                     >
                       Disconnect
                     </Button>
@@ -158,6 +275,7 @@ const SocialConnections = () => {
                     className="w-full" 
                     variant="outline"
                     onClick={() => setSelectedPlatform(platform)}
+                    disabled={isLoading}
                   >
                     <Link2 className="h-4 w-4 mr-2" />
                     Connect Account
@@ -218,14 +336,18 @@ const SocialConnections = () => {
             )}
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={() => setSelectedPlatform(null)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedPlatform(null)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button 
               onClick={connectPlatform}
-              disabled={!formData.username || !formData.password}
+              disabled={isLoading || !formData.username || !formData.password}
             >
-              Connect Account
+              {isLoading ? "Connecting..." : "Connect Account"}
             </Button>
           </CardFooter>
         </Card>

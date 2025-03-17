@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,20 +13,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, Briefcase, Heart, Tag } from "lucide-react";
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [profileData, setProfileData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    audienceType: "",
-    audienceAge: "",
-    audienceSize: "",
+    name: "",
+    email: "",
+    audience_type: "",
+    audience_age: "",
+    audience_size: "",
     niche: "",
     interests: "",
-    brandCollaborations: "",
+    brand_collaborations: ""
   });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Initialize form with user data when available
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || "",
+        email: user.email || "",
+        audience_type: user.audience_type || "",
+        audience_age: user.audience_age || "",
+        audience_size: user.audience_size || "",
+        niche: user.niche || "",
+        interests: user.interests || "",
+        brand_collaborations: user.brand_collaborations || ""
+      });
+    }
+  }, [user]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -37,13 +55,25 @@ const Profile = () => {
     setProfileData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would update the user profile via API
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been updated.",
-    });
+    setIsLoading(true);
+    
+    try {
+      await updateProfile({
+        name: profileData.name,
+        audience_type: profileData.audience_type,
+        audience_age: profileData.audience_age,
+        audience_size: profileData.audience_size,
+        niche: profileData.niche,
+        interests: profileData.interests,
+        brand_collaborations: profileData.brand_collaborations
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleLogout = () => {
@@ -87,7 +117,11 @@ const Profile = () => {
                   type="email"
                   value={profileData.email}
                   onChange={handleChange}
+                  disabled
                 />
+                <p className="text-sm text-muted-foreground">
+                  Email cannot be changed
+                </p>
               </div>
               
               {/* Influencer-specific fields */}
@@ -144,10 +178,10 @@ const Profile = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="audienceType">Audience Type</Label>
+                    <Label htmlFor="audience_type">Audience Type</Label>
                     <Select 
-                      value={profileData.audienceType} 
-                      onValueChange={(value) => handleSelectChange("audienceType", value)}
+                      value={profileData.audience_type} 
+                      onValueChange={(value) => handleSelectChange("audience_type", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select audience type" />
@@ -164,10 +198,10 @@ const Profile = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="audienceAge">Primary Age Group</Label>
+                    <Label htmlFor="audience_age">Primary Age Group</Label>
                     <Select 
-                      value={profileData.audienceAge} 
-                      onValueChange={(value) => handleSelectChange("audienceAge", value)}
+                      value={profileData.audience_age} 
+                      onValueChange={(value) => handleSelectChange("audience_age", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select age range" />
@@ -186,10 +220,10 @@ const Profile = () => {
                 </div>
                 
                 <div className="space-y-2 mt-4">
-                  <Label htmlFor="audienceSize">Audience Size</Label>
+                  <Label htmlFor="audience_size">Audience Size</Label>
                   <Select 
-                    value={profileData.audienceSize} 
-                    onValueChange={(value) => handleSelectChange("audienceSize", value)}
+                    value={profileData.audience_size} 
+                    onValueChange={(value) => handleSelectChange("audience_size", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select your follower count range" />
@@ -211,12 +245,12 @@ const Profile = () => {
                   Brand Collaborations
                 </h3>
                 <div className="space-y-2">
-                  <Label htmlFor="brandCollaborations">Past & Current Collaborations</Label>
+                  <Label htmlFor="brand_collaborations">Past & Current Collaborations</Label>
                   <Textarea
-                    id="brandCollaborations"
-                    name="brandCollaborations"
+                    id="brand_collaborations"
+                    name="brand_collaborations"
                     placeholder="List brands you've worked with and types of collaborations (e.g., sponsored posts, brand ambassador, product reviews)"
-                    value={profileData.brandCollaborations}
+                    value={profileData.brand_collaborations}
                     onChange={handleChange}
                     className="min-h-[100px]"
                   />
@@ -224,8 +258,8 @@ const Profile = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button type="submit" className="ml-auto">
-                Save Changes
+              <Button type="submit" className="ml-auto" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
               </Button>
             </CardFooter>
           </form>
@@ -241,7 +275,7 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
+                <AvatarImage src={user?.avatar_url} alt={user?.name} />
                 <AvatarFallback className="text-2xl">{user?.name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <Button variant="outline" className="w-full">Change Avatar</Button>
