@@ -12,18 +12,13 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import ContentTools from "./pages/ContentTools";
 import Collaborations from "./pages/Collaborations";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
-// Protected route component
+// Modified ProtectedRoute to always allow access
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-  
+  // Always return children without checking authentication
   return <>{children}</>;
 };
 
