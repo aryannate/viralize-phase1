@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 
 const Auth = () => {
-  const { login, signup, resendConfirmationEmail } = useAuth();
+  const { login, signup, resendConfirmationEmail, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,13 +29,27 @@ const Auth = () => {
     confirmPassword: ""
   });
   
-  const [isLoading, setIsLoading] = useState(false);
   const [emailNeedsConfirmation, setEmailNeedsConfirmation] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
+  const [processingAuth, setProcessingAuth] = useState(false);
   
   // Check if redirected after email confirmation
   const errorDescription = searchParams.get("error_description");
   const isEmailConfirmationError = errorDescription?.includes("Email not confirmed");
+  
+  // Check for successful confirmation
+  const accessToken = searchParams.get("access_token");
+  const refreshToken = searchParams.get("refresh_token");
+  const hasAuthTokens = !!accessToken && !!refreshToken;
+  
+  useEffect(() => {
+    if (hasAuthTokens) {
+      toast({
+        title: "Email confirmed successfully",
+        description: "You can now login to your account.",
+      });
+    }
+  }, [hasAuthTokens, toast]);
   
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -59,12 +73,12 @@ const Auth = () => {
     }
     
     try {
-      setIsLoading(true);
+      setProcessingAuth(true);
       await resendConfirmationEmail(email);
     } catch (error) {
       console.error("Error resending confirmation:", error);
     } finally {
-      setIsLoading(false);
+      setProcessingAuth(false);
     }
   };
   
@@ -72,7 +86,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      setIsLoading(true);
+      setProcessingAuth(true);
       
       await login(loginData.email, loginData.password);
       
@@ -83,7 +97,7 @@ const Auth = () => {
         setUnconfirmedEmail(loginData.email);
       }
     } finally {
-      setIsLoading(false);
+      setProcessingAuth(false);
     }
   };
   
@@ -100,7 +114,7 @@ const Auth = () => {
     }
     
     try {
-      setIsLoading(true);
+      setProcessingAuth(true);
       
       await signup(signupData.name, signupData.email, signupData.password);
       
@@ -117,9 +131,22 @@ const Auth = () => {
     } catch (error) {
       // Error is already handled by the signup function
     } finally {
-      setIsLoading(false);
+      setProcessingAuth(false);
     }
   };
+  
+  // Global loading state from AuthContext
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <h2 className="text-2xl font-semibold">Checking authentication...</h2>
+          <p className="text-gray-600 dark:text-gray-400">Please wait while we verify your account.</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -140,7 +167,7 @@ const Auth = () => {
                 size="sm" 
                 className="p-0 h-auto text-amber-800 dark:text-amber-400 mt-1" 
                 onClick={handleResendConfirmation}
-                disabled={isLoading}
+                disabled={processingAuth}
               >
                 Resend verification email
               </Button>
@@ -174,6 +201,7 @@ const Auth = () => {
                       required
                       value={loginData.email}
                       onChange={handleLoginChange}
+                      disabled={processingAuth}
                     />
                   </div>
                   <div className="space-y-2">
@@ -190,12 +218,18 @@ const Auth = () => {
                       required
                       value={loginData.password}
                       onChange={handleLoginChange}
+                      disabled={processingAuth}
                     />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
+                  <Button type="submit" className="w-full" disabled={processingAuth}>
+                    {processingAuth ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : "Login"}
                   </Button>
                 </CardFooter>
               </form>
@@ -221,6 +255,7 @@ const Auth = () => {
                       required
                       value={signupData.name}
                       onChange={handleSignupChange}
+                      disabled={processingAuth}
                     />
                   </div>
                   <div className="space-y-2">
@@ -233,6 +268,7 @@ const Auth = () => {
                       required
                       value={signupData.email}
                       onChange={handleSignupChange}
+                      disabled={processingAuth}
                     />
                   </div>
                   <div className="space-y-2">
@@ -244,6 +280,7 @@ const Auth = () => {
                       required
                       value={signupData.password}
                       onChange={handleSignupChange}
+                      disabled={processingAuth}
                     />
                   </div>
                   <div className="space-y-2">
@@ -255,12 +292,18 @@ const Auth = () => {
                       required
                       value={signupData.confirmPassword}
                       onChange={handleSignupChange}
+                      disabled={processingAuth}
                     />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-2">
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Sign Up"}
+                  <Button type="submit" className="w-full" disabled={processingAuth}>
+                    {processingAuth ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : "Sign Up"}
                   </Button>
                   <p className="text-xs text-center text-gray-500 mt-2">
                     By signing up, you'll receive a verification email. Please check your inbox after registration.
