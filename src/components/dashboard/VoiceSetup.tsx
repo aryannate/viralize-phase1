@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Mic, Play, Square, Upload, RefreshCw, Trash2 } from "lucide-react";
+import { Mic, Play, Square, Upload, RefreshCw, Trash2, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
