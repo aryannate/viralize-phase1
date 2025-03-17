@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -63,7 +62,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const name = userData?.name || userData?.user_metadata?.name || 'User';
         const email = userData?.email || '';
         
-        const newProfile: Partial<User> = {
+        // Create a new profile object with the required id field
+        const newProfile = {
           id: userId,
           name,
           email,
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         const { data: createdProfile, error: createError } = await supabase
           .from('profiles')
-          .insert([newProfile])
+          .insert(newProfile)
           .select()
           .single();
         
