@@ -23,6 +23,7 @@ type AuthContextType = {
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,6 +103,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  // Function to resend confirmation email
+  const resendConfirmationEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Confirmation email sent",
+        description: "Please check your inbox for the verification email.",
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend confirmation email",
+        description: error.message || "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   // Login function using Supabase
   const login = async (email: string, password: string) => {
     try {
@@ -110,7 +136,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        // Handle email not confirmed error specifically
+        if (error.message.includes("Email not confirmed")) {
+          toast({
+            title: "Email not confirmed",
+            description: "Please check your inbox and confirm your email before logging in. You can also request a new confirmation email.",
+            variant: "destructive",
+          });
+          throw new Error("EMAIL_NOT_CONFIRMED");
+        }
+        throw error;
+      }
       
       if (data.user) {
         // Fetch profile after login
@@ -127,11 +164,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      // If it's not the specific email confirmation error we already handled
+      if (error.message !== "EMAIL_NOT_CONFIRMED") {
+        toast({
+          title: "Login failed",
+          description: error.message || "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      }
       throw error;
     }
   };
@@ -146,13 +186,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: {
             name,
           },
+          // Setting emailRedirectTo ensures the user is redirected back to your app after confirming
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
       
       if (error) throw error;
       
       if (data.user) {
-        // For development mode without email verification
+        // Development mode flow - if session exists, user can login immediately without confirmation
         if (data.session) {
           // Fetch the newly created profile
           const profileData = await fetchUserProfile(data.user.id);
@@ -169,7 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           toast({
             title: "Verification email sent",
-            description: "Please check your email to verify your account.",
+            description: "Please check your email to verify your account. You can login after verifying your email.",
           });
         }
       }
@@ -230,7 +272,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       login, 
       signup, 
       logout,
-      updateProfile 
+      updateProfile,
+      resendConfirmationEmail
     }}>
       {children}
     </AuthContext.Provider>
