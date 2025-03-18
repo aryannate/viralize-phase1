@@ -2,12 +2,26 @@
 import { useState, useEffect } from "react";
 import { User } from "@/types/auth";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { 
   ensureProfileExists, 
-  updateUserProfile, 
-  resendEmailConfirmation 
+  updateUserProfile
 } from "@/utils/authUtils";
+import { v4 as uuidv4 } from "uuid";
+
+// Constants for localStorage keys
+const CURRENT_USER_KEY = "current_user";
+const USERS_STORAGE_KEY = "app_users";
+
+// Helper to get all users from localStorage
+const getUsers = (): Record<string, User> => {
+  const usersJSON = localStorage.getItem(USERS_STORAGE_KEY);
+  return usersJSON ? JSON.parse(usersJSON) : {};
+};
+
+// Helper to save users to localStorage
+const saveUsers = (users: Record<string, User>) => {
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+};
 
 export const useAuthProvider = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -18,14 +32,12 @@ export const useAuthProvider = () => {
     // Check for existing session on initial load
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const { user: authUser } = session;
-          if (authUser) {
-            const profile = await ensureProfileExists(authUser.id, authUser);
-            setUser(profile);
-            setIsAuthenticated(true);
-          }
+        const currentUserJSON = localStorage.getItem(CURRENT_USER_KEY);
+        if (currentUserJSON) {
+          const userData = JSON.parse(currentUserJSON);
+          const profile = await ensureProfileExists(userData.id, userData);
+          setUser(profile);
+          setIsAuthenticated(true);
         }
       } catch (error) {
         console.error("Session check error:", error);
@@ -34,39 +46,30 @@ export const useAuthProvider = () => {
       }
     };
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          const profile = await ensureProfileExists(session.user.id, session.user);
-          setUser(profile);
-          setIsAuthenticated(true);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      }
-    );
-
     checkSession();
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
       
-      const profile = await ensureProfileExists(data.user.id, data.user);
+      // Get all users
+      const users = getUsers();
+      
+      // Find user with matching email
+      const userEntry = Object.entries(users).find(([_, user]) => user.email === email);
+      
+      if (!userEntry || userEntry[1]._password !== password) {
+        throw new Error("Invalid email or password");
+      }
+      
+      const userId = userEntry[0];
+      const userData = userEntry[1];
+      
+      // Set current user in localStorage
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
+      
+      const profile = await ensureProfileExists(userId, userData);
       setUser(profile);
       setIsAuthenticated(true);
       
@@ -89,30 +92,33 @@ export const useAuthProvider = () => {
   const signup = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.auth.signUp({
+      
+      // Get all users
+      const users = getUsers();
+      
+      // Check if email already exists
+      const userExists = Object.values(users).some(user => user.email === email);
+      if (userExists) {
+        throw new Error("Email already in use");
+      }
+      
+      // Create new user
+      const userId = uuidv4();
+      const newUser: User & { _password: string } = {
+        id: userId,
+        name,
         email,
-        password,
-        options: {
-          data: {
-            name,
-          },
-        },
-      });
-
-      if (error) throw error;
-
+        _password: password, // Store password (in a real app, hash this!)
+      };
+      
+      // Save user to "database"
+      users[userId] = newUser;
+      saveUsers(users);
+      
       toast({
         title: "Signup successful",
-        description: "Please check your email to confirm your account.",
+        description: "You can now log in with your new account.",
       });
-      
-      // Create profile for the new user
-      if (data.user) {
-        await ensureProfileExists(data.user.id, {
-          ...data.user,
-          name
-        });
-      }
     } catch (error: any) {
       toast({
         title: "Signup failed",
@@ -130,7 +136,13 @@ export const useAuthProvider = () => {
       setIsLoading(true);
       if (!user) throw new Error("No user logged in");
       await updateUserProfile(user.id, data);
-      setUser(prev => prev ? { ...prev, ...data } : null);
+      
+      // Update current user in localStorage
+      if (user) {
+        const updatedUser = { ...user, ...data };
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
       
       toast({
         title: "Profile updated",
@@ -151,8 +163,9 @@ export const useAuthProvider = () => {
   const logout = async () => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      // Remove current user from localStorage
+      localStorage.removeItem(CURRENT_USER_KEY);
       
       setUser(null);
       setIsAuthenticated(false);
@@ -173,7 +186,11 @@ export const useAuthProvider = () => {
   };
 
   const resendConfirmationEmail = async (email: string) => {
-    await resendEmailConfirmation(email);
+    // No-op function since we're not using email confirmation
+    toast({
+      title: "Email confirmation",
+      description: "Email confirmation is not required in this system.",
+    });
   };
 
   // For compatibility with existing code
