@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -83,7 +82,7 @@ const HashtagGenerator = () => {
     }
 
     try {
-      const { data, error } = await supabase.from('ai_responses').insert({
+      const { error } = await supabase.from('ai_responses').insert({
         user_id: user.id,
         response_type: 'hashtags',
         content: hashtags.join(','),

@@ -97,7 +97,7 @@ const MonetizationInsights = () => {
 
     try {
       // First save to AI responses for history
-      await supabase.from('ai_responses').insert({
+      const { error: aiResponseError } = await supabase.from('ai_responses').insert({
         user_id: user.id,
         response_type: 'monetization_insight',
         content: insight.description,
@@ -108,18 +108,22 @@ const MonetizationInsights = () => {
         }
       });
       
+      if (aiResponseError) throw aiResponseError;
+      
       // Then save to monetization insights table
       const numValue = insight.estimatedValue 
         ? parseFloat(insight.estimatedValue.replace(/[^0-9.-]+/g, "")) 
         : null;
         
-      await supabase.from('monetization_insights').insert({
+      const { error: insightError } = await supabase.from('monetization_insights').insert({
         user_id: user.id,
         insight_type: 'opportunity',
         title: insight.title,
         description: insight.description,
         estimated_value: numValue,
       });
+      
+      if (insightError) throw insightError;
 
       toast({
         title: "Insight saved",

@@ -82,12 +82,14 @@ const CommentResponder = () => {
     }
 
     try {
-      await supabase.from('ai_responses').insert({
+      const { error } = await supabase.from('ai_responses').insert({
         user_id: user.id,
         response_type: 'comment_response',
         content: response,
         metadata: { original_comment: comment }
       });
+      
+      if (error) throw error;
 
       toast({
         title: "Response saved",

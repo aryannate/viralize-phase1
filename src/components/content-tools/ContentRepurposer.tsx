@@ -87,7 +87,7 @@ const ContentRepurposer = () => {
     }
 
     try {
-      await supabase.from('ai_responses').insert({
+      const { error } = await supabase.from('ai_responses').insert({
         user_id: user.id,
         response_type: 'repurposed_content',
         content: repurposedContent,
@@ -97,6 +97,8 @@ const ContentRepurposer = () => {
           content_length: contentLength
         }
       });
+      
+      if (error) throw error;
 
       toast({
         title: "Content saved",
