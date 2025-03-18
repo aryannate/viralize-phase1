@@ -43,46 +43,16 @@ export const ensureProfileExists = async (userId: string, userData: any): Promis
   }
 };
 
-export const performAutoLogin = async (): Promise<User> => {
+export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<void> => {
   try {
-    const dummyUser: User = {
-      id: "auto-login-user-id",
-      email: "auto@example.com",
-      name: "Auto User",
-    };
-    
-    toast({
-      title: "Auto login successful",
-      description: "Welcome to Viralize!",
-    });
-    
-    return dummyUser;
-  } catch (error: any) {
-    console.error("Auto login error:", error);
-    toast({
-      title: "Auto login failed",
-      description: error.message || "An unexpected error occurred",
-      variant: "destructive",
-    });
-    throw error;
-  }
-};
-
-export const updateUserProfile = async (user: User, data: Partial<User>): Promise<void> => {
-  try {
-    if (!user) throw new Error("No user logged in");
+    if (!userId) throw new Error("No user ID provided");
     
     const { error } = await supabase
       .from('profiles')
       .update(data)
-      .eq('id', user.id);
+      .eq('id', userId);
     
     if (error) throw error;
-    
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been successfully updated.",
-    });
   } catch (error: any) {
     toast({
       title: "Update failed",

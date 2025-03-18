@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AvatarTraining from "./pages/AvatarTraining";
@@ -16,10 +17,15 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
-// Modified ProtectedRoute to always allow access
+// Proper ProtectedRoute implementation
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // Always return children without checking authentication
-  return <>{children}</>;
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  
+  return isAuthenticated ? <>{children}</> : <Navigate to="/auth" />;
 };
 
 const App = () => (
