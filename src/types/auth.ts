@@ -10,6 +10,7 @@ export type User = {
   niche?: string;
   interests?: string;
   brand_collaborations?: string;
+  _password?: string; // Added for authentication
 };
 
 export type AuthContextType = {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@/types/auth";
 import { toast } from "@/components/ui/use-toast";
@@ -104,7 +103,7 @@ export const useAuthProvider = () => {
       
       // Create new user
       const userId = uuidv4();
-      const newUser: User & { _password: string } = {
+      const newUser: User = {
         id: userId,
         name,
         email,
