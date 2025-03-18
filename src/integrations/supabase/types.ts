@@ -69,30 +69,6 @@ export type Database = {
         }
         Relationships: []
       }
-      captions: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          theme: string | null
-          user_id: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          theme?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          theme?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       collaboration_applications: {
         Row: {
           collaboration_id: string
