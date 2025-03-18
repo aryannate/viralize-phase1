@@ -9,71 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ai_responses: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          metadata: Json | null
-          response_type: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          response_type: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          response_type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      avatar_settings: {
-        Row: {
-          created_at: string
-          customizations: Json | null
-          id: string
-          image_url: string | null
-          style: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          customizations?: Json | null
-          id?: string
-          image_url?: string | null
-          style?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          customizations?: Json | null
-          id?: string
-          image_url?: string | null
-          style?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "avatar_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       brand_collaborations: {
         Row: {
           brand_description: string | null
@@ -281,45 +216,27 @@ export type Database = {
       }
       profiles: {
         Row: {
-          audience_age: string | null
-          audience_size: string | null
-          audience_type: string | null
           avatar_url: string | null
-          brand_collaborations: string | null
           created_at: string
           email: string | null
           id: string
-          interests: string | null
           name: string | null
-          niche: string | null
           updated_at: string
         }
         Insert: {
-          audience_age?: string | null
-          audience_size?: string | null
-          audience_type?: string | null
           avatar_url?: string | null
-          brand_collaborations?: string | null
           created_at?: string
           email?: string | null
           id: string
-          interests?: string | null
           name?: string | null
-          niche?: string | null
           updated_at?: string
         }
         Update: {
-          audience_age?: string | null
-          audience_size?: string | null
-          audience_type?: string | null
           avatar_url?: string | null
-          brand_collaborations?: string | null
           created_at?: string
           email?: string | null
           id?: string
-          interests?: string | null
           name?: string | null
-          niche?: string | null
           updated_at?: string
         }
         Relationships: []
