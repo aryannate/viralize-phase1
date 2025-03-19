@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const Auth = () => {
   const { login, signup, isAuthenticated, isLoading } = useAuth();
@@ -16,6 +17,11 @@ const Auth = () => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", password: "" });
   const [authLoading, setAuthLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+  }>({});
   
   useEffect(() => {
     // Redirect to dashboard if already authenticated
@@ -24,14 +30,57 @@ const Auth = () => {
     }
   }, [isAuthenticated, navigate]);
   
+  const validateForm = (form: 'login' | 'signup') => {
+    const errors: {
+      name?: string;
+      email?: string;
+      password?: string;
+    } = {};
+    
+    if (form === 'signup') {
+      if (!signupForm.name.trim()) {
+        errors.name = "Name is required";
+      }
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const email = form === 'login' ? loginForm.email : signupForm.email;
+    if (!email) {
+      errors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      errors.email = "Please enter a valid email";
+    }
+    
+    const password = form === 'login' ? loginForm.password : signupForm.password;
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (form === 'signup' && password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm('login')) return;
+    
     setAuthLoading(true);
     try {
       await login(loginForm.email, loginForm.password);
       navigate("/dashboard");
-    } catch (error) {
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+    } catch (error: any) {
       console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
     } finally {
       setAuthLoading(false);
     }
@@ -39,11 +88,27 @@ const Auth = () => {
   
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm('signup')) return;
+    
     setAuthLoading(true);
     try {
       await signup(signupForm.name, signupForm.email, signupForm.password);
-    } catch (error) {
+      toast({
+        title: "Signup successful",
+        description: "Your account has been created. You can now log in.",
+      });
+      // Reset form after successful signup
+      setSignupForm({ name: "", email: "", password: "" });
+      // Switch to login tab
+      const loginTab = document.querySelector('[data-value="login"]') as HTMLElement;
+      if (loginTab) loginTab.click();
+    } catch (error: any) {
       console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: error.message || "Could not create your account",
+        variant: "destructive",
+      });
     } finally {
       setAuthLoading(false);
     }
@@ -66,8 +131,8 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login" data-value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup" data-value="signup">Sign Up</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
@@ -87,7 +152,11 @@ const Auth = () => {
                       value={loginForm.email}
                       onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
                       required
+                      className={formErrors.email ? "border-red-500" : ""}
                     />
+                    {formErrors.email && (
+                      <p className="text-red-500 text-sm">{formErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
@@ -98,7 +167,11 @@ const Auth = () => {
                       value={loginForm.password}
                       onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
                       required
+                      className={formErrors.password ? "border-red-500" : ""}
                     />
+                    {formErrors.password && (
+                      <p className="text-red-500 text-sm">{formErrors.password}</p>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -134,7 +207,11 @@ const Auth = () => {
                       value={signupForm.name}
                       onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
                       required
+                      className={formErrors.name ? "border-red-500" : ""}
                     />
+                    {formErrors.name && (
+                      <p className="text-red-500 text-sm">{formErrors.name}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
@@ -145,7 +222,11 @@ const Auth = () => {
                       value={signupForm.email}
                       onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
                       required
+                      className={formErrors.email ? "border-red-500" : ""}
                     />
+                    {formErrors.email && (
+                      <p className="text-red-500 text-sm">{formErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
@@ -156,7 +237,11 @@ const Auth = () => {
                       value={signupForm.password}
                       onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
                       required
+                      className={formErrors.password ? "border-red-500" : ""}
                     />
+                    {formErrors.password && (
+                      <p className="text-red-500 text-sm">{formErrors.password}</p>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
