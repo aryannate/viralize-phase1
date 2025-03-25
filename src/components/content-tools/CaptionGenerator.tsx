@@ -90,20 +90,11 @@ const CaptionGenerator = () => {
         user_id: user.id,
         response_type: 'caption',
         content: caption,
-        metadata: { original_prompt: prompt }
+        metadata: { original_prompt: prompt, theme: prompt }
       });
       
       if (aiResponseError) throw aiResponseError;
       
-      // Save to captions table
-      const { error: captionsError } = await supabase.from('captions').insert({
-        user_id: user.id,
-        content: caption,
-        theme: prompt
-      });
-      
-      if (captionsError) throw captionsError;
-
       toast({
         title: "Caption saved",
         description: "Your caption has been saved to your account",
